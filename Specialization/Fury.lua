@@ -31,7 +31,8 @@ local FR = {
 	Siegebreaker      = 280772,
 	Enrage            = 184361,
 	Frenzy            = 335077,
-	Condemn           = 330325,
+	CondemnMassacre	  = 330325,
+	Condemn           = 317485,
 	Execute           = 5308,
 	ExecuteMassacre   = 280735,
 	Bladestorm        = 46924,
@@ -109,7 +110,7 @@ function Warrior:FurySingleTarget()
 	local conduit = fd.covenant.soulbindConduits;
 
 	local targetHp = MaxDps:TargetPercentHealth() * 100;
-	local canExecute = rage >= 20 and (
+	local canExecute = (
 			(talents[FR.Massacre] and targetHp < 35) or
 			targetHp < 20 or
 			(targetHp > 80 and covenantId == Venthyr)
@@ -117,8 +118,8 @@ function Warrior:FurySingleTarget()
 			buff[FR.SuddenDeathAura].up
 	;
 
-	local Execute = covenantId == Venthyr and FR.Condemn or
-		(talents[FR.Massacre] and FR.ExecuteMassacre or FR.Execute);
+	local Execute = (talents[FR.Massacre] and FR.ExecuteMassacre or FR.Execute);
+	local Condemn = (talents[FR.Massacre] and FR.CondemnMassacre or FR.Condemn);
 
 	-- raging_blow,if=runeforge.will_of_the_berserker.equipped&buff.will_of_the_berserker.remains<gcd;
 	if cooldown[FR.RagingBlow].ready and
@@ -145,8 +146,12 @@ function Warrior:FurySingleTarget()
 	end
 
 	-- condemn;
+	if canExecute and covenantId == Venthyr and cooldown[Condemn].ready then
+		return Condemn;
+	end
+	
 	-- execute;
-	if canExecute then
+	if canExecute and covenantId ~= Venthyr and cooldown[Execute].ready then
 		return Execute;
 	end
 
