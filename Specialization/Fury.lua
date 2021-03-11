@@ -28,6 +28,7 @@ local FR = {
 	MeatCleaverAura   = 85739,
 	Whirlwind         = 190411,
 	RagingBlow        = 85288,
+	CrushingBlow	  = 335097,
 	Siegebreaker      = 280772,
 	Enrage            = 184361,
 	Frenzy            = 335077,
@@ -37,6 +38,7 @@ local FR = {
 	ExecuteMassacre   = 280735,
 	Bladestorm        = 46924,
 	Bloodthirst       = 23881,
+	BloodBath	  = 335096,
 	ViciousContempt   = 337302,
 	Cruelty           = 335070,
 	DragonRoar        = 118000,
@@ -117,16 +119,26 @@ function Warrior:FurySingleTarget()
 		) or
 			buff[FR.SuddenDeathAura].up
 	;
-
+	local Recklessness = buff[FR.Recklessness].up;
 	local Execute = (talents[FR.Massacre] and FR.ExecuteMassacre or FR.Execute);
 	local Condemn = (talents[FR.Massacre] and FR.CondemnMassacre or FR.Condemn);
+
 
 	-- raging_blow,if=runeforge.will_of_the_berserker.equipped&buff.will_of_the_berserker.remains<gcd;
 	if cooldown[FR.RagingBlow].ready and
 		runeforge[FR.WillOfTheBerserkerBonusId] and
-		buff[FR.WillOfTheBerserker].remains < 2
+		buff[FR.WillOfTheBerserker].remains < gcd and
+		not (Recklessness and talents[FR.RecklessAbandon])
 	then
 		return FR.RagingBlow;
+	end
+	
+	if cooldown[FR.CrushingBlow].ready and
+		runeforge[FR.WillOfTheBerserkerBonusId] and
+		buff[FR.WillOfTheBerserker].remains < gcd and
+		(Recklessness and talents[FR.RecklessAbandon])
+	then
+		return FR.CrushingBlow;
 	end
 
 	-- siegebreaker,if=spell_targets.whirlwind>1|raid_event.adds.in>15;
@@ -163,11 +175,24 @@ function Warrior:FurySingleTarget()
 	-- bloodthirst,if=buff.enrage.down|conduit.vicious_contempt.rank>5&target.health.pct<35&!talent.cruelty.enabled;
 	if cooldown[FR.Bloodthirst].ready and
 		(
-			not buff[FR.Enrage].up or
-			conduit[FR.ViciousContempt] > 5 and targetHp < 35 and not talents[FR.Cruelty]
-		)
+			not Enrage
+			--or conduit[FR.ViciousContempt] > 5 
+			and targetHp < 35 and not talents[FR.Cruelty]
+		) and
+		not (Recklessness and talents[FR.RecklessAbandon])
 	then
 		return FR.Bloodthirst;
+	end
+	
+	if cooldown[FR.BloodBath].ready and
+		(
+			not Enrage
+			--or conduit[FR.ViciousContempt] > 5 
+			and targetHp < 35 and not talents[FR.Cruelty]
+		) and
+		(Recklessness and talents[FR.RecklessAbandon])
+	then
+		return FR.BloodBath;
 	end
 
 	-- dragon_roar,if=buff.enrage.up&(spell_targets.whirlwind>1|raid_event.adds.in>15);
@@ -181,18 +206,36 @@ function Warrior:FurySingleTarget()
 	end
 
 	-- raging_blow,if=charges=2;
-	if cooldown[FR.RagingBlow].charges >= 2 then
+	if cooldown[FR.RagingBlow].charges >= 2 and
+		not (Recklessness and talents[FR.RecklessAbandon]) then
 		return FR.RagingBlow;
+	end
+	
+	if cooldown[FR.CrushingBlow].charges >= 2 and
+		(Recklessness and talents[FR.RecklessAbandon]) then
+		return FR.CrushingBlow;
 	end
 
 	-- bloodthirst;
-	if cooldown[FR.Bloodthirst].ready then
+	if cooldown[FR.Bloodthirst].ready and
+		not (Recklessness and talents[FR.RecklessAbandon]) then
 		return FR.Bloodthirst;
+	end
+	
+	if cooldown[FR.BloodBath].ready and
+		(Recklessness and talents[FR.RecklessAbandon]) then
+		return FR.BloodBath;
 	end
 
 	-- raging_blow;
-	if cooldown[FR.RagingBlow].ready then
+	if cooldown[FR.RagingBlow].ready and
+		not (Recklessness and talents[FR.RecklessAbandon]) then
 		return FR.RagingBlow;
+	end
+	
+	if cooldown[FR.CrushingBlow].ready and
+		(Recklessness and talents[FR.RecklessAbandon]) then
+		return FR.CrushingBlow;
 	end
 
 	-- whirlwind;
